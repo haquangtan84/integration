@@ -55,30 +55,30 @@
       <version>Version: {0}</version>
     </messages>
     <publicationStates>
-      <archived>Archived</archived>
+      <archived>В архиве</archived>
       <obsolete>Obsolete</obsolete>
-      <unpublished>Unpublished</unpublished>
-      <draft>Draft</draft>
+      <unpublished>Не опубликовано</unpublished>
+      <draft>Черновик</draft>
       <pending>Pending</pending>
-      <approved>Approved</approved>
-      <inreview>In Review</inreview>
+      <approved>Утверждено</approved>
+      <inreview>На рассмотрении</inreview>
       <staged>Staged</staged>
-      <published>Published</published>
-      <live>Published</live>
+      <published>Опубликовано</published>
+      <live>Опубликовано</live>
     </publicationStates>
     <view>View</view>
     <edit>Edit</edit>
-    <download>Download</download>
+    <download>Загрузить</download>
   </SocialIntegration>
   <UIPopupWindow>
     <title>
-      <DocViewer>Preview</DocViewer>
+      <DocViewer>Предварительный просмотр</DocViewer>
     </title>
   </UIPopupWindow>
   <ElementSet>
     <dialog>
       <label>       
-        <resourceType>Resource Type</resourceType>        
+        <resourceType>Тип ресурса</resourceType>        
       </label>
     </dialog>
   </ElementSet>
