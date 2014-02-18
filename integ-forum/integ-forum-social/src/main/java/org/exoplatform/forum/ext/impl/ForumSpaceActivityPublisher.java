@@ -60,6 +60,9 @@ public class ForumSpaceActivityPublisher extends ForumEventListener {
     ctx = ForumActivityUtils.processBBCode(ctx);
     ExoSocialActivity comment = ActivityExecutor.execute(task, ctx);
     
+    if (comment == null) {
+      return;
+    }
     //
     ForumActivityUtils.takeCommentBack(post, comment);
   }

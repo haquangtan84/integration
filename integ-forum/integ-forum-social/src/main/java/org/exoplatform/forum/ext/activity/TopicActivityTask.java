@@ -94,7 +94,8 @@ public abstract class TopicActivityTask implements ActivityTask<ForumActivityCon
         
         return newActivity;
       } catch (Exception e) {
-        LOG.error("Can not record Activity for when add topic's title " + ctx.getTopic().getId(), e);
+        LOG.warn("Can not record Activity for when add topic's title " + ctx.getTopic().getId());
+        LOG.debug(e.getMessage(), e);
       }
       return null;
     }

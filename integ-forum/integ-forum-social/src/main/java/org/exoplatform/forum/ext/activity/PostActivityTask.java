@@ -87,6 +87,12 @@ public abstract class PostActivityTask implements ActivityTask<ForumActivityCont
         templateParams.put(ForumActivityBuilder.TOPIC_POST_COUNT_KEY, "" + topic.getPostCount());
         
         ActivityManager am = ForumActivityUtils.getActivityManager();
+        
+        //
+        if (am.getActivity(topicActivity.getId()) == null) {
+          return null;
+        }
+        
         am.updateActivity(topicActivity);
         
         //add new comment with title: first 3 lines
@@ -102,7 +108,8 @@ public abstract class PostActivityTask implements ActivityTask<ForumActivityCont
         
         return newComment;
       } catch (Exception e) {
-        LOG.error("Can not record Comment for when add post " + ctx.getPost().getId(), e);
+        LOG.warn("Can not record comment when add post : " + ctx.getPost().getPath());
+        LOG.debug(e.getMessage(), e);
       }
       return null;
     }

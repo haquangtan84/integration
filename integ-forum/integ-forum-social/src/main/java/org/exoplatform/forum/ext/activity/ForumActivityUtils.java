@@ -181,7 +181,7 @@ public class ForumActivityUtils {
    */
   public static ExoSocialActivity getActivityOfTopic(ForumActivityContext ctx) {
     ForumService fs = ForumActivityUtils.getForumService();
-    String activityId = fs.getActivityIdForOwnerId(ctx.getTopic().getId());
+    String activityId = fs.getActivityIdForOwnerPath(ctx.getTopic().getPath());
     
     ActivityManager am = ForumActivityUtils.getActivityManager();
     
