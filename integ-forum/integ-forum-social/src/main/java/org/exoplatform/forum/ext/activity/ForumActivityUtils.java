@@ -130,7 +130,9 @@ public class ForumActivityUtils {
         continue;
       }
       String commentId = getForumService().getActivityIdForOwnerPath(post.getPath());
-      am.saveComment(activity, am.getActivity(commentId));
+      ExoSocialActivity comment = am.getActivity(commentId);
+      comment.setTitle(ForumActivityBuilder.getFourFirstLines(post.getMessage()));
+      am.saveComment(activity, comment);
       count++;
     }
     
@@ -281,6 +283,8 @@ public class ForumActivityUtils {
     if (activity == null)
       return;
     activity = ForumActivityBuilder.updateNumberOfReplies(activity, true);
+    activity.setTitle(null);
+    activity.setBody(null);
     am.updateActivity(activity);
     am.deleteComment(activityId, commentId);
   }
