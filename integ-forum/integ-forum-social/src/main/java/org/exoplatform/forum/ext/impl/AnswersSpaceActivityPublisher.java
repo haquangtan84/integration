@@ -140,7 +140,7 @@ public class AnswersSpaceActivityPublisher extends AnswerEventListener {
   
   @Override
   public void moveQuestions(List<String> questions, String catId) {
-	ExoContainer exoContainer = ExoContainerContext.getCurrentContainer();
+    ExoContainer exoContainer = ExoContainerContext.getCurrentContainer();
     ActivityManager activityM = (ActivityManager) exoContainer.getComponentInstanceOfType(ActivityManager.class);
     FAQService faqS = (FAQService) exoContainer.getComponentInstanceOfType(FAQService.class);
     IdentityManager identityM = (IdentityManager) exoContainer.getComponentInstanceOfType(IdentityManager.class);
@@ -150,10 +150,10 @@ public class AnswersSpaceActivityPublisher extends AnswerEventListener {
         String activityId = faqS.getActivityIdForQuestion(questionId);
         Identity streamOwner = null;
         Map<String, String> templateParams = updateTemplateParams(new HashMap<String, String>(), question.getId(),
-                ActivityUtils.getQuestionRate(question),
-                ActivityUtils.getNbOfAnswers(question),
-                ActivityUtils.getNbOfComments(question),
-                question.getLanguage(), question.getLink());
+                                                                      ActivityUtils.getQuestionRate(question),
+                                                                      ActivityUtils.getNbOfAnswers(question),
+                                                                      ActivityUtils.getNbOfComments(question),
+                                                                      question.getLanguage(), question.getLink());
         String questionDetail = ActivityUtils.processContent(question.getDetail());
         Identity spaceIdentity = getSpaceIdentity(catId);
         if (spaceIdentity != null) {
@@ -179,8 +179,8 @@ public class AnswersSpaceActivityPublisher extends AnswerEventListener {
             faqS.saveActivityIdForAnswer(questionId, answer, comment.getId());  
           }
           for (Comment cm : question.getComments()) {
-        	String message = ActivityUtils.processContent(cm.getComments());  
-        	ExoSocialActivityImpl comment = new ExoSocialActivityImpl();  
+            String message = ActivityUtils.processContent(cm.getComments());  
+            ExoSocialActivityImpl comment = new ExoSocialActivityImpl();  
             Map<String, String> commentTemplateParams = new HashMap<String, String>();
             commentTemplateParams.put(LINK_KEY, cm.getId());  
             comment.setTemplateParams(commentTemplateParams);
@@ -192,9 +192,9 @@ public class AnswersSpaceActivityPublisher extends AnswerEventListener {
             faqS.saveActivityIdForComment(questionId, cm.getId(), question.getLanguage(), comment.getId());
           }
         }
-	  } catch (Exception e) {
-	    e.printStackTrace();
-	  }	
+      } catch (Exception e) {
+        e.printStackTrace();
+      }	
     }  
   }
   
