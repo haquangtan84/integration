@@ -193,7 +193,7 @@ public class AnswersSpaceActivityPublisher extends AnswerEventListener {
           }
         }
       } catch (Exception e) {
-        e.printStackTrace();
+        LOG.debug("Fail to move questions " + e.getMessage());
       }	
     }  
   }
