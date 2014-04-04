@@ -405,7 +405,7 @@
 					<% } else { %>
 					  <div class="commentItem commentFormBox" id="CommentFormBlock${activity.id}">
 					<% } %>
-					<%if (!uicomponent.isLookedOrClosed()) {%>
+					<%if (!uicomponent.isLockedOrClosed()) {%>
 					  <div class="commmentLeft">
 							<a class="avatarXSmall" rel="tooltip" data-placement="bottom" title="$currentCommenterName" href="$currentCommenterUri">
 								<img src="$currentCommenterAvatar" alt="$currentCommenterName"/>

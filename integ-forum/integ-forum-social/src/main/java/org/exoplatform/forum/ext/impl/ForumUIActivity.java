@@ -269,7 +269,7 @@ public class ForumUIActivity extends BaseKSActivity {
     return false;
   }
   
-  public boolean isLookedOrClosed() {
+  public boolean isLockedOrClosed() {
     Topic topic = getTopic();
     if(topic == null || topic.getIsClosed() || topic.getIsLock()){
       return true;
