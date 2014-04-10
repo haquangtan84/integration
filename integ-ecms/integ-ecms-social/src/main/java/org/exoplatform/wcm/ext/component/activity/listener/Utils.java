@@ -21,6 +21,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.jcr.Node;
@@ -59,6 +60,10 @@ import org.exoplatform.social.core.manager.ActivityManager;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.wcm.ext.component.activity.ContentUIActivity;
+import org.exoplatform.webui.application.WebuiRequestContext;
+
+import java.util.ResourceBundle;
+
 
 
 /**
@@ -187,6 +192,8 @@ public class Utils {
     ExoContainer container = ExoContainerContext.getCurrentContainer();
     ActivityManager activityManager = (ActivityManager) container.getComponentInstanceOfType(ActivityManager.class);
     IdentityManager identityManager = (IdentityManager) container.getComponentInstanceOfType(IdentityManager.class);
+    ActivityCommonService activityCommonService =
+            (ActivityCommonService)container.getComponentInstanceOfType(ActivityCommonService.class);
 
     SpaceService spaceService = WCMCoreUtils.getService(SpaceService.class);
 
@@ -202,18 +209,17 @@ public class Utils {
         nodeActivityID = node.getProperty(ActivityTypeUtils.EXO_ACTIVITY_ID).getString();
         exa =  activityManager.getActivity(nodeActivityID);
       }catch (Exception e){
-        //Not activity is deleted, return no related activity
+          LOG.info("No activity is deleted, return no related activity");
       }
     }
     ExoSocialActivity activity = null ;
     String commentID;
     boolean commentFlag = false;
-    if (node.isNodeType(MIX_COMMENT)) {
-      if (node.hasProperty(MIX_COMMENT_ID)) {
-        commentID = node.getProperty(MIX_COMMENT_ID).getString();
-        activity = activityManager.getActivity(commentID);
-        commentFlag = activity!=null;
-      }
+    if (node.isNodeType(MIX_COMMENT) && node.hasProperty(MIX_COMMENT_ID) && activityCommonService.isEditing(node))
+    {
+      commentID = node.getProperty(MIX_COMMENT_ID).getString();
+      if (StringUtils.isNotBlank(commentID)) activity = activityManager.getActivity(commentID);
+      commentFlag = (activity != null);
     }
     if (activity==null) {
       activity = createActivity(identityManager, activityOwnerId,
@@ -239,12 +245,15 @@ public class Utils {
         paramsMap.put(ContentUIActivity.MESSAGE, paramMessage);
         paramsMap.put(ContentUIActivity.SYSTEM_COMMENT, paramContent);
         activity.setTemplateParams(paramsMap);
+        updateNotifyMessages(activity, activityMsgBundleKey, systemComment);
         activityManager.updateActivity(activity);
       } else {
+        updateNotifyMessages(activity, activity.getTemplateParams().get(ContentUIActivity.MESSAGE), activity.getTemplateParams().get(ContentUIActivity.SYSTEM_COMMENT));
         activityManager.saveComment(exa, activity);
-        if (node.isNodeType(MIX_COMMENT)) {
+        if (activityCommonService.isEditing(node)) {
           commentID = activity.getId();
-          node.setProperty(MIX_COMMENT_ID, commentID);
+          if (node.canAddMixin(MIX_COMMENT)) node.addMixin(MIX_COMMENT);
+          if (node.isNodeType(MIX_COMMENT)) node.setProperty(MIX_COMMENT_ID, commentID);
         }
       }
       if (needUpdate) {
@@ -274,21 +283,24 @@ public class Utils {
         ActivityTypeUtils.attachActivityId(node, activityId);
       }
       updateMainActivity(activityManager, node, activity);
-        if (node.isNodeType(ActivityTypeUtils.EXO_ACTIVITY_INFO)) {
-            try {
-                nodeActivityID = node.getProperty(ActivityTypeUtils.EXO_ACTIVITY_ID).getString();
-                exa = activityManager.getActivity(nodeActivityID);
-            }catch (Exception e){
-                //Not activity is deleted, return no related activity
-            }
-            if (exa!=null && !commentFlag  && isSystemComment) {
-                activityManager.saveComment(exa, activity);
-                if (node.isNodeType(MIX_COMMENT)) {
-                    commentID = activity.getId();
-                    node.setProperty(MIX_COMMENT_ID, commentID);
-                }
-            }
+
+      if (node.isNodeType(ActivityTypeUtils.EXO_ACTIVITY_INFO)) {
+        try {
+          nodeActivityID = node.getProperty(ActivityTypeUtils.EXO_ACTIVITY_ID).getString();
+          exa = activityManager.getActivity(nodeActivityID);
+        } catch (Exception e) {
+          LOG.info("No activity is deleted, return no related activity");
         }
+        if (exa != null && !commentFlag && isSystemComment) {
+          activityManager.saveComment(exa, activity);
+          if (activityCommonService.isEditing(node)) {
+            commentID = activity.getId();
+            if (node.canAddMixin(MIX_COMMENT)) node.addMixin(MIX_COMMENT);
+            if (node.isNodeType(MIX_COMMENT)) node.setProperty(MIX_COMMENT_ID, commentID);
+          }
+        }
+      }
+
       return activity;
     }
   }
@@ -318,6 +330,8 @@ public class Utils {
     ExoContainer container = ExoContainerContext.getCurrentContainer();
     ActivityManager activityManager = (ActivityManager) container.getComponentInstanceOfType(ActivityManager.class);
     IdentityManager identityManager = (IdentityManager) container.getComponentInstanceOfType(IdentityManager.class);
+    ActivityCommonService activityCommonService =
+            (ActivityCommonService)container.getComponentInstanceOfType(ActivityCommonService.class);
 
     SpaceService spaceService = WCMCoreUtils.getService(SpaceService.class);
 
@@ -333,17 +347,17 @@ public class Utils {
         nodeActivityID = node.getProperty(ActivityTypeUtils.EXO_ACTIVITY_ID).getString();
         exa =  activityManager.getActivity(nodeActivityID);
       }catch (Exception e){
-        //Not activity is deleted, return no related activity
+          LOG.info("No activity is deleted, return no related activity");
       }
     }
     ExoSocialActivity activity = null ;
     String commentID;
     boolean commentFlag = false;
-    if (node.isNodeType(MIX_COMMENT)) {
+    if (node.isNodeType(MIX_COMMENT) && activityCommonService.isEditing(node)) {
       if (node.hasProperty(MIX_COMMENT_ID)) {
         commentID = node.getProperty(MIX_COMMENT_ID).getString();
-        activity = activityManager.getActivity(commentID);
-        commentFlag = activity!=null;
+        if (StringUtils.isNotBlank(commentID)) activity = activityManager.getActivity(commentID);
+        commentFlag = (activity != null);
       }
     }
     if (activity==null) {
@@ -366,16 +380,19 @@ public class Utils {
         } else {
           paramMessage = activityMsgBundleKey;
           paramContent = systemComment;
-        }
+        }              
         paramsMap.put(ContentUIActivity.MESSAGE, paramMessage);
         paramsMap.put(ContentUIActivity.SYSTEM_COMMENT, paramContent);
         activity.setTemplateParams(paramsMap);
+        updateNotifyMessages(activity, activityMsgBundleKey, systemComment);
         activityManager.updateActivity(activity);
       } else {
+        updateNotifyMessages(activity, activity.getTemplateParams().get(ContentUIActivity.MESSAGE), activity.getTemplateParams().get(ContentUIActivity.SYSTEM_COMMENT));
         activityManager.saveComment(exa, activity);
-        if (node.isNodeType(MIX_COMMENT)) {
+        if (activityCommonService.isEditing(node)) {
           commentID = activity.getId();
-          node.setProperty(MIX_COMMENT_ID, commentID);
+          if (node.canAddMixin(MIX_COMMENT)) node.addMixin(MIX_COMMENT);
+          if (node.isNodeType(MIX_COMMENT)) node.setProperty(MIX_COMMENT_ID, commentID);
         }
       }      
       return activity;
@@ -401,24 +418,46 @@ public class Utils {
       if (!StringUtils.isEmpty(activityId)) {
         ActivityTypeUtils.attachActivityId(node, activityId);
       }
-        if (node.isNodeType(ActivityTypeUtils.EXO_ACTIVITY_INFO)) {
-            try {
-                nodeActivityID = node.getProperty(ActivityTypeUtils.EXO_ACTIVITY_ID).getString();
-                exa = activityManager.getActivity(nodeActivityID);
-            }catch (Exception e){
-                //Not activity is deleted, return no related activity
-            }
-            if (exa!=null && !commentFlag && isSystemComment) {
-                activityManager.saveComment(exa, activity);
-                if (node.isNodeType(MIX_COMMENT)) {
-                    commentID = activity.getId();
-                    node.setProperty(MIX_COMMENT_ID, commentID);
-                }
-            }
-        }
 
-        return activity;
+      if (node.isNodeType(ActivityTypeUtils.EXO_ACTIVITY_INFO)) {
+        try {
+          nodeActivityID = node.getProperty(ActivityTypeUtils.EXO_ACTIVITY_ID).getString();
+          exa = activityManager.getActivity(nodeActivityID);
+        } catch (Exception e) {
+          LOG.info("No activity is deleted, return no related activity");
+        }
+        if (exa != null && !commentFlag && isSystemComment) {
+          activityManager.saveComment(exa, activity);
+          if (activityCommonService.isEditing(node)) {
+            commentID = activity.getId();
+            if (node.canAddMixin(MIX_COMMENT)) node.addMixin(MIX_COMMENT);
+            if (node.isNodeType(MIX_COMMENT)) node.setProperty(MIX_COMMENT_ID, commentID);
+          }
+        }
+      }
+
+      return activity;
     }
+  }
+  
+  private static void updateNotifyMessages(ExoSocialActivity activity, String activityMsgBundleKey, String systemComment) 
+      throws Exception {     
+    WebuiRequestContext context = WebuiRequestContext.getCurrentInstance();
+    Locale locale = new Locale("en");
+    ResourceBundle res = context.getApplication().getResourceBundle(locale);
+    StringBuffer sb = new StringBuffer();
+    String[] keys = activityMsgBundleKey.split(ActivityCommonService.VALUE_SEPERATOR);
+    String[] values = systemComment.split(ActivityCommonService.VALUE_SEPERATOR);
+    for (String key : keys) {      
+      String messsage = res.getString(key);
+      if(values.length > 0) {
+        for(int i = 0; i < values.length; i++) {
+          messsage = messsage.replace("{"+i+"}", values[i]);          
+        }
+      }
+      sb.append(messsage).append("\n");
+    }
+    activity.setTitle(sb.toString());
   }
   
   
@@ -427,7 +466,6 @@ public class Utils {
     String state;
     String nodeTitle;
     String nodeType = null;
-    String nodeIconName = null;
     String documentTypeLabel;
     String currentVersion = null;
     TemplateService templateService = WCMCoreUtils.getService(TemplateService.class);
@@ -603,7 +641,8 @@ public class Utils {
     activity.setUserId(identity.getId());
     activity.setType(activityType);
     activity.setUrl(node.getPath());
-    activity.setTitle(title);
+    if(isSystemComment) updateNotifyMessages(activity, activityMsgBundleKey, systemComment);
+    else activity.setTitle(title);
     activity.setTemplateParams(activityParams);
     return activity;
   }
@@ -612,18 +651,16 @@ public class Utils {
     // get services
     ExoContainer container = ExoContainerContext.getCurrentContainer();
     ActivityManager activityManager = (ActivityManager) container.getComponentInstanceOfType(ActivityManager.class);
-    IdentityManager identityManager = (IdentityManager) container.getComponentInstanceOfType(IdentityManager.class);
     
     // get owner
-    String activityOwnerId = getActivityOwnerId(node);
     String nodeActivityID = StringUtils.EMPTY;
-    ExoSocialActivity exa =null;
     if (node.isNodeType(ActivityTypeUtils.EXO_ACTIVITY_INFO)) {
       try {
         nodeActivityID = node.getProperty(ActivityTypeUtils.EXO_ACTIVITY_ID).getString();
         activityManager.deleteActivity(nodeActivityID);
       }catch (Exception e){
-        //Not activity is deleted, return no related activity
+        LOG.info("No activity is deleted, return no related activity");
+
       }
     }    
   }
@@ -653,7 +690,7 @@ public class Utils {
   /**
    * Generate the Thumbnail Image URI.
    * 
-   * @param node the node
+   * @param file the node
    * @return the Thumbnail uri with medium size
    * @throws Exception the exception
    */
@@ -734,9 +771,11 @@ public class Utils {
     result = result.replaceAll("(?i)<script.*>.*</script>", "");
     result = result.replaceAll("(?i)<style.*>.*</style>", "");
     result = result.replaceAll("<([a-z\"]+) *[^/]*?>", "");
-    result = result.replaceAll("</([a-z]+) *[^/]*?>", "<br>");
-    result = result.replaceAll("([\n\t])+", "<br>");
-    result = result.replaceAll("(<br>[ \t\n]+<br>)", "<br>");
+    result = result.replaceAll("</p>", "<br>");
+    result = result.replaceAll("</([a-z]+) *[^/]*?>", "");
+    result = result.replaceAll("([\r\n\t])+", "");
+    result = result.replaceAll("^(<br>)", "");
+    result = result.replaceAll("(<br>[ \r\t\n]+<br>)", "<br>");
     result = result.replaceAll("(<br>)+", "<br>");
     int i = 0;
     int index = -1;
@@ -744,7 +783,7 @@ public class Utils {
       index = result.indexOf("<br>", index+1);
       if (index<0) break;
       i++;
-      if (i>linesCount) break;
+      if (i>=linesCount) break;
     }
     if (index <0) {
       if (result.length()>MAX_SUMMARY_CHAR_COUNT)
